@@ -1,6 +1,6 @@
 import { describeError } from './messages'
 
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5041/api'
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://tutorscheduler-api.onrender.com/api'
 
 const TOKEN_KEY = 'tutorscheduler_token'
 const USER_KEY = 'tutorscheduler_user'
