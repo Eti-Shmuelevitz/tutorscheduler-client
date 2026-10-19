@@ -115,11 +115,13 @@ async function apiFetch(path, { method = 'GET', body } = {}) {
 
 // Lightweight reachability probe for the connection indicator: any HTTP
 // answer at all means the server is up and CORS lets us through.
-export async function pingServer(timeoutMs = 4000) {
+export async function pingServer(timeoutMs = 10000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const response = await fetch(`${BASE_URL}/subjects`, { signal: controller.signal })
+    const response = await fetch(`${BASE_URL}/lessonslots`, {
+      signal: controller.signal,
+    })
     return response.status < 500
   } catch {
     return false
@@ -127,7 +129,6 @@ export async function pingServer(timeoutMs = 4000) {
     clearTimeout(timer)
   }
 }
-
 export const authApi = {
   register: (fullName, email, password, role) =>
     apiFetch('/auth/register', { method: 'POST', body: { fullName, email, password, role } }),
