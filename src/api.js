@@ -5,11 +5,14 @@ export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://tutorsched
 const TOKEN_KEY = 'tutorscheduler_token'
 const USER_KEY = 'tutorscheduler_user'
 
-// localStorage can throw (private mode, blocked storage) - never let that
+// The session lives in sessionStorage, not localStorage: it survives a page
+// refresh but is dropped when the tab/window is closed, so reopening the site
+// always asks for a fresh login.
+// Storage can throw (private mode, blocked storage) - never let that
 // take the whole app down.
 function readStorage(key) {
   try {
-    return localStorage.getItem(key)
+    return sessionStorage.getItem(key)
   } catch {
     return null
   }
@@ -17,11 +20,20 @@ function readStorage(key) {
 
 function writeStorage(key, value) {
   try {
-    if (value === null) localStorage.removeItem(key)
-    else localStorage.setItem(key, value)
+    if (value === null) sessionStorage.removeItem(key)
+    else sessionStorage.setItem(key, value)
   } catch {
     // ignore
   }
+}
+
+// Older versions kept the session in localStorage - wipe it so those
+// browsers don't stay logged in forever.
+try {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+} catch {
+  // ignore
 }
 
 export function getToken() {
