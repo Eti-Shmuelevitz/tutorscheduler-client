@@ -24,6 +24,14 @@ export function formatRange(start, end) {
   return `⁦${formatTime(start)}⁠–⁠${formatTime(end)}⁩`
 }
 
+const priceFormatter = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'ILS', maximumFractionDigits: 2 })
+
+// 0 is a legitimate price (a free lesson), so it gets a word instead of "₪0".
+export function formatPrice(value) {
+  const amount = Number(value ?? 0)
+  return amount === 0 ? 'חינם' : priceFormatter.format(amount)
+}
+
 export function minutesBetween(start, end) {
   return Math.round((toDate(end) - toDate(start)) / 60000)
 }

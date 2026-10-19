@@ -6,6 +6,7 @@ import {
   firstName,
   formatDay,
   formatDuration,
+  formatPrice,
   formatRange,
   formatRelative,
   formatShortDay,
@@ -26,6 +27,7 @@ const LIST_PAGE_SIZE = 8
 const DURATIONS = [30, 45, 60, 90, 120]
 const REPEATS = [1, 2, 4, 8]
 const CHART_DAYS = 14
+const MAX_PRICE = 10000 // same limit the server enforces
 
 const FILTERS = [
   { id: 'upcoming', label: 'קרובים' },
@@ -67,6 +69,7 @@ export default function TutorView({ user }) {
   const [startTime, setStartTime] = useState('16:00')
   const [duration, setDuration] = useState(60)
   const [repeatWeeks, setRepeatWeeks] = useState(1)
+  const [price, setPrice] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // list
@@ -117,8 +120,12 @@ export default function TutorView({ user }) {
   const liveSlots = useMemo(() => slots.filter((s) => s.status !== 'Cancelled'), [slots])
   const selectedSubject = subjects.find((s) => String(s.id) === String(subjectId))
 
+  const priceValue = price.trim() === '' ? null : Number(price)
+
   let formProblem = null
-  if (!start || !end) formProblem = 'יש לבחור תאריך ושעה.'
+  if (priceValue === null) formProblem = 'יש להזין מחיר לשיעור (0 לשיעור חינם).'
+  else if (!Number.isFinite(priceValue) || priceValue < 0 || priceValue > MAX_PRICE) formProblem = `המחיר חייב להיות בין 0 ל-${MAX_PRICE.toLocaleString('he-IL')} ₪.`
+  else if (!start || !end) formProblem = 'יש לבחור תאריך ושעה.'
   else if (end <= start) formProblem = 'השיעור חייב להסתיים באותו יום.'
   else if (start < now) formProblem = 'אי אפשר לפרסם שיעור בזמן שכבר עבר.'
 
@@ -135,8 +142,8 @@ export default function TutorView({ user }) {
   const clash = occurrences[0]?.clash
   const clashCount = occurrences.filter((o) => o.clash).length
 
-  async function createSlot(subject, startAt, endAt) {
-    return lessonSlotsApi.create(Number(subject), startAt.toISOString(), endAt.toISOString())
+  async function createSlot(subject, startAt, endAt, slotPrice) {
+    return lessonSlotsApi.create(Number(subject), startAt.toISOString(), endAt.toISOString(), slotPrice)
   }
 
   async function handleCreate(e) {
@@ -146,8 +153,8 @@ export default function TutorView({ user }) {
 
     if (repeatWeeks === 1) {
       try {
-        await createSlot(subjectId, start, end)
-        toast({ text: `${formatDay(start)} · ${formatRange(start, end)}`, kind: 'success', title: 'השיעור פורסם' })
+        await createSlot(subjectId, start, end, priceValue)
+        toast({ text: `${formatDay(start)} · ${formatRange(start, end)} · ${formatPrice(priceValue)}`, kind: 'success', title: 'השיעור פורסם' })
         setStartTime(endTime) // next slot starts where this one ended
       } catch (err) {
         toast({ text: err.message, kind: err.status === 409 ? 'conflict' : 'error' })
@@ -168,7 +175,7 @@ export default function TutorView({ user }) {
         continue
       }
       try {
-        await createSlot(subjectId, o.start, o.end)
+        await createSlot(subjectId, o.start, o.end, priceValue)
         created++
       } catch {
         skipped.push(formatShortDay(o.start))
@@ -252,7 +259,7 @@ export default function TutorView({ user }) {
     const nextEnd = addDays(slot.endTimeUtc, 7)
     markBusy(slot.id, true)
     try {
-      await createSlot(slot.subjectId, nextStart, nextEnd)
+      await createSlot(slot.subjectId, nextStart, nextEnd, slot.price ?? 0)
       toast({ text: `${formatDay(nextStart)} · ${formatRange(nextStart, nextEnd)}`, kind: 'success', title: 'שוכפל לשבוע הבא' })
       loadSlots()
     } catch (err) {
@@ -385,6 +392,21 @@ export default function TutorView({ user }) {
               <span>שעת התחלה</span>
               <input className="input" type="time" step={900} value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
             </label>
+            <label className="field">
+              <span>מחיר לשיעור (₪)</span>
+              <input
+                className="input"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={MAX_PRICE}
+                step="any"
+                placeholder="לדוגמה: 120"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+              />
+            </label>
             <div className="field field-wide">
               <span>משך</span>
               <div className="chips">
@@ -418,7 +440,7 @@ export default function TutorView({ user }) {
                 ) : (
                   <>
                     <span>
-                      <strong>{formatDay(start)}</strong> · <span dir="ltr">{formatRange(start, end)}</span> · {formatDuration(duration)}
+                      <strong>{formatDay(start)}</strong> · <span dir="ltr">{formatRange(start, end)}</span> · {formatDuration(duration)} · {formatPrice(priceValue)}
                     </span>
                     {repeatWeeks > 1 && (
                       <span className="muted small">
@@ -521,7 +543,7 @@ export default function TutorView({ user }) {
                           )}
                         </strong>
                         <span className="muted small">
-                          {formatDay(slot.startTimeUtc)} · <span dir="ltr">{formatRange(slot.startTimeUtc, slot.endTimeUtc)}</span>
+                          {formatDay(slot.startTimeUtc)} · <span dir="ltr">{formatRange(slot.startTimeUtc, slot.endTimeUtc)}</span> · {formatPrice(slot.price)}
                           {!isPast && slot.status !== 'Cancelled' && <> · {formatRelative(slot.startTimeUtc, now)}</>}
                         </span>
                       </div>

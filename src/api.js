@@ -160,8 +160,8 @@ export const lessonSlotsApi = {
     return apiFetch(`/lessonslots?${params.toString()}`)
   },
   listMine: (page, pageSize) => apiFetch(`/lessonslots/mine?page=${page}&pageSize=${pageSize}`),
-  create: (subjectId, startTimeUtc, endTimeUtc) =>
-    apiFetch('/lessonslots', { method: 'POST', body: { subjectId, startTimeUtc, endTimeUtc } }),
+  create: (subjectId, startTimeUtc, endTimeUtc, price) =>
+    apiFetch('/lessonslots', { method: 'POST', body: { subjectId, startTimeUtc, endTimeUtc, price } }),
   book: (id) => apiFetch(`/lessonslots/${id}/bookings`, { method: 'POST' }),
   cancel: (id) => apiFetch(`/lessonslots/${id}`, { method: 'DELETE' }),
   // Works on booked lessons too: the student is notified.

@@ -4,6 +4,7 @@ import {
   firstName,
   formatDay,
   formatDuration,
+  formatPrice,
   formatRange,
   formatRelative,
   greeting,
@@ -227,7 +228,7 @@ export default function StudentView({ user }) {
     setBookingIds((prev) => new Set(prev).add(slot.id))
     try {
       await lessonSlotsApi.book(slot.id)
-      toast({ text: `${slot.subjectName} עם ${slot.tutorName}, ${formatDay(slot.startTimeUtc)} ${formatRange(slot.startTimeUtc, slot.endTimeUtc)}`, kind: 'success', title: 'השיעור הוזמן' })
+      toast({ text: `${slot.subjectName} עם ${slot.tutorName}, ${formatDay(slot.startTimeUtc)} ${formatRange(slot.startTimeUtc, slot.endTimeUtc)} · ${formatPrice(slot.price)}`, kind: 'success', title: 'השיעור הוזמן' })
       setSelectedIds((prev) => {
         const next = new Set(prev)
         next.delete(slot.id)
@@ -585,6 +586,8 @@ export default function StudentView({ user }) {
                         <span dir="ltr">{formatRange(slot.startTimeUtc, slot.endTimeUtc)}</span>
                         <span className="dot" />
                         <span>{formatDuration(minutesBetween(slot.startTimeUtc, slot.endTimeUtc))}</span>
+                        <span className="dot" />
+                        <strong>{formatPrice(slot.price)}</strong>
                       </div>
 
                       <div className="slot-foot">
@@ -660,7 +663,7 @@ export default function StudentView({ user }) {
                         {b.subjectName} <span className="muted">עם {b.tutorName}</span>
                       </strong>
                       <span className="muted small">
-                        {formatDay(b.startTimeUtc)} · <span dir="ltr">{formatRange(b.startTimeUtc, b.endTimeUtc)}</span>
+                        {formatDay(b.startTimeUtc)} · <span dir="ltr">{formatRange(b.startTimeUtc, b.endTimeUtc)}</span> · {formatPrice(b.price)}
                       </span>
                     </div>
                     <div className="booking-side">
